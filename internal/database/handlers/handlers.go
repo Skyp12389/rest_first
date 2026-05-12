@@ -13,7 +13,7 @@ import (
 )
 
 func HiHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Дороу залупа, это работает"))
+	http.ServeFile(w, r, "todo.html")
 }
 
 func GetAllTODOHandler(DB *sql.DB, w http.ResponseWriter, r *http.Request) ([]repotodo.TODO, error) {

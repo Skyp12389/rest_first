@@ -27,6 +27,8 @@ func main() {
 	router.HandleFunc("/todo", func(w http.ResponseWriter, r *http.Request) { handlers.SaveTODOHandler(DB, w, r) }).Methods("POST")              // Добавить новое туду
 	router.HandleFunc("/todo/{id}", func(w http.ResponseWriter, r *http.Request) { handlers.UpdateTODOByIDHandler(DB, w, r) }).Methods("PATCH")  // Обновить туду по айди
 
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir(".")))
+
 	log.Fatal(http.ListenAndServe(":8080", router))
 
 }
