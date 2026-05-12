@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODO App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: url('https://images.meme-arsenal.com/b1b3745b50cefd3b7ebb31e4364396e4.jpg') no-repeat center center fixed;
+            background-size: cover;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .add-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .add-form input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .add-form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .add-form button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .add-form button:hover {
+            background: #45a049;
+        }
+        .todo-list {
+            list-style: none;
+        }
+        .todo-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .todo-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        .todo-content {
+            flex: 1;
+        }
+        .todo-task {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+        .todo-item.done .todo-task {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .todo-description {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .todo-date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .todo-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .todo-actions button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+        }
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+        .edit-form {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .edit-form input,
+        .edit-form textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .edit-form button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-cancel {
+            background: #999;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TODO App</h1>
+        
+        <div class="add-form">
+            <input type="text" id="newTask" placeholder="Новая задача...">
+            <textarea id="newDescription" placeholder="Описание (необязательно)"></textarea>
+            <button onclick="addTodo()">Добавить</button>
+        </div>
+
+        <div id="error" class="error" style="display:none;"></div>
+        <div id="loading" class="loading">Загрузка...</div>
+        <ul id="todoList" class="todo-list"></ul>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8080/todo';
+        let todos = [];
+
+        async function loadTodos() {
+            try {
+                const res = await fetch(API);
+                todos = await res.json();
+                render();
+            } catch (e) {
+                showError('Ошибка загрузки: ' + e.message);
+            }
+        }
+
+        async function addTodo() {
+            const taskInput = document.getElementById('newTask');
+            const descInput = document.getElementById('newDescription');
+            const task = taskInput.value.trim();
+            if (!task) return;
+
+            try {
+                const res = await fetch(API, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        task,
+                        description: descInput.value.trim() || null,
+                        done: false
+                    })
+                });
+                if (res.ok) {
+                    taskInput.value = '';
+                    descInput.value = '';
+                    loadTodos();
+                }
+            } catch (e) {
+                showError('Ошибка добавления: ' + e.message);
+            }
+        }
+
+        async function toggleDone(id, done) {
+            const todo = todos.find(t => t.id === id);
+            if (!todo) return;
+            try {
+                await fetch(`${API}/${id}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({...todo, done})
+                });
+                loadTodos();
+            } catch (e) {
+                showError('Ошибка обновления: ' + e.message);
+            }
+        }
+
+        async function deleteTodo(id) {
+            if (!confirm('Удалить задачу?')) return;
+            try {
+                await fetch(`${API}/${id}`, {method: 'DELETE'});
+                loadTodos();
+            } catch (e) {
+                showError('Ошибка удаления: ' + e.message);
+            }
+        }
+
+        function showEditForm(id) {
+            document.querySelectorAll('.edit-form').forEach(f => f.style.display = 'none');
+            const form = document.getElementById(`edit-${id}`);
+            form.style.display = 'block';
+        }
+
+        async function saveEdit(id) {
+            const form = document.getElementById(`edit-${id}`);
+            const task = form.querySelector('.edit-task').value.trim();
+            const description = form.querySelector('.edit-desc').value.trim() || null;
+            const done = form.querySelector('.edit-done').checked;
+            if (!task) return;
+
+            try {
+                await fetch(`${API}/${id}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id, task, description, done})
+                });
+                loadTodos();
+            } catch (e) {
+                showError('Ошибка сохранения: ' + e.message);
+            }
+        }
+
+        function cancelEdit(id) {
+            document.getElementById(`edit-${id}`).style.display = 'none';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            return new Date(dateStr).toLocaleString('ru-RU');
+        }
+
+        function render() {
+            const list = document.getElementById('todoList');
+            const loading = document.getElementById('loading');
+            loading.style.display = 'none';
+
+            list.innerHTML = todos.map(t => `
+                <li class="todo-item ${t.done ? 'done' : ''}">
+                    <input type="checkbox" ${t.done ? 'checked' : ''} 
+                           onchange="toggleDone(${t.id}, this.checked)">
+                    <div class="todo-content">
+                        <div class="todo-task">${escapeHtml(t.task)}</div>
+                        ${t.description ? `<div class="todo-description">${escapeHtml(t.description)}</div>` : ''}
+                        ${t.created_at ? `<div class="todo-date">Создано: ${formatDate(t.created_at)}</div>` : ''}
+                        <div class="edit-form" id="edit-${t.id}">
+                            <input type="text" class="edit-task" value="${escapeHtml(t.task)}">
+                            <textarea class="edit-desc">${escapeHtml(t.description || '')}</textarea>
+                            <label><input type="checkbox" class="edit-done" ${t.done ? 'checked' : ''}> Выполнено</label>
+                            <div>
+                                <button class="btn-save" onclick="saveEdit(${t.id})">Сохранить</button>
+                                <button class="btn-cancel" onclick="cancelEdit(${t.id})">Отмена</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="todo-actions">
+                        <button class="btn-edit" onclick="showEditForm(${t.id})">Ред.</button>
+                        <button class="btn-delete" onclick="deleteTodo(${t.id})">Удал.</button>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        function showError(msg) {
+            const err = document.getElementById('error');
+            err.textContent = msg;
+            err.style.display = 'block';
+            setTimeout(() => err.style.display = 'none', 3000);
+        }
+
+        loadTodos();
+    </script>
+</body>
+</html>
