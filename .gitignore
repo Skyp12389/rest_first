@@ -1,0 +1,4 @@
+go.mod
+go.sum
+internal/database/database.go
+internal/database/tasks.go
