@@ -97,6 +97,11 @@ func SaveTODOHandler(DB *sql.DB, w http.ResponseWriter, r *http.Request) (*repot
 		log.Println(err)
 		return nil, err
 	}
+
+	if newTODO.Task == "" {
+		http.Error(w, "Пункт `Новая задача` не должен быть пустым", 400)
+	}
+
 	return &newTODO, nil
 }
 

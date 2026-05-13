@@ -167,14 +167,23 @@
             border-radius: 4px;
             margin-bottom: 10px;
         }
+        .empty-message {
+            text-align: center;
+            color: #999;
+            font-size: 16px;
+            padding: 40px;
+        }
+        .task-required {
+            border-color: #f44336 !important;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>TODO App</h1>
+        <h1>TODO</h1>
         
         <div class="add-form">
-            <input type="text" id="newTask" placeholder="Новая задача...">
+            <input type="text" id="newTask" placeholder="Новая задача">
             <textarea id="newDescription" placeholder="Описание (необязательно)"></textarea>
             <button onclick="addTodo()">Добавить</button>
         </div>
@@ -202,7 +211,12 @@
             const taskInput = document.getElementById('newTask');
             const descInput = document.getElementById('newDescription');
             const task = taskInput.value.trim();
-            if (!task) return;
+            if (!task) {
+                taskInput.classList.add('task-required');
+                setTimeout(() => taskInput.classList.remove('task-required'), 2000);
+                showError('Введите название задачи');
+                return;
+            }
 
             try {
                 const res = await fetch(API, {
@@ -287,6 +301,11 @@
             const list = document.getElementById('todoList');
             const loading = document.getElementById('loading');
             loading.style.display = 'none';
+
+            if (todos.length === 0) {
+                list.innerHTML = '<li class="empty-message">Задач пока нет. Добавьте первую!</li>';
+                return;
+            }
 
             list.innerHTML = todos.map(t => `
                 <li class="todo-item ${t.done ? 'done' : ''}">

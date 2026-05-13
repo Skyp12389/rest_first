@@ -24,6 +24,7 @@ func InsertTODO(db *sql.DB, todo *TODO) (int, error) {
 		log.Println(err)
 		return 0, err
 	}
+
 	return newIDtask, nil
 }
 

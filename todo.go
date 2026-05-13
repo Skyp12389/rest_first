@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"todo/internal/database/handlers"
 
 	"github.com/gorilla/mux"
@@ -11,6 +12,13 @@ import (
 )
 
 func main() {
+
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	file, _ := os.Create("logfile.log")
+	log.Println("Log in the file")
+	log.SetOutput(file)
+	file.Close()
+
 	connStr := "postgres://postgres:1@localhost:5432/EQ?sslmode=disable"
 	DB, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -19,7 +27,6 @@ func main() {
 	defer DB.Close()
 
 	router := mux.NewRouter()
-
 	router.HandleFunc("/", handlers.HiHandler).Methods("GET")
 	router.HandleFunc("/todo", func(w http.ResponseWriter, r *http.Request) { handlers.GetAllTODOHandler(DB, w, r) }).Methods("GET")             // Получить все туду
 	router.HandleFunc("/todo/{id}", func(w http.ResponseWriter, r *http.Request) { handlers.GetTODOByIDHandler(DB, w, r) }).Methods("GET")       // Получить туду по айди
